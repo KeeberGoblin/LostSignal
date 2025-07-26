@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Basic symbiont research -->
+  <ResearchProjectDef>
+    <defName>FleshSymbiontStudy</defName>
+    <label>flesh symbiont study</label>
+    <description>Study the biomechanical flesh symbiont to understand its origins and potentially find ways to safely remove or control the parasitic bond.
+
+This research may unlock methods to resist compulsion and develop countermeasures against the entity's influence.</description>
+    <baseCost>3000</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>Xenobiology</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>8.00</researchViewX>
+    <researchViewY>4.00</researchViewY>
+    <tab>Anomaly</tab>
+  </ResearchProjectDef>
+
+  <!-- Advanced genetic research (Biotech required) -->
+  <ResearchProjectDef>
+    <defName>SymbiontGenetics</defName>
+    <label>symbiont genetics</label>
+    <description>Study the genetic structure of flesh symbionts to understand how they alter human DNA. This research may lead to controlled genetic modification and the creation of symbiont xenogerms.
+
+WARNING: This research involves dangerous procedures that may damage the symbiont and enrage bonded colonists.</description>
+    <baseCost>4000</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>FleshSymbiontStudy</li>
+      <li>Xenogermination</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>10.00</researchViewX>
+    <researchViewY>4.00</researchViewY>
+    <tab>Anomaly</tab>
+    <modExtensions>
+      <li Class="ResearchModExtension_Biotech">
+        <requiredDLC>Biotech</requiredDLC>
+      </li>
+    </modExtensions>
+  </ResearchProjectDef>
+
+  <!-- Psychic research (Royalty required) -->
+  <ResearchProjectDef>
+    <defName>SymbiontPsychics</defName>
+    <label>symbiont psychics</label>
+    <description>Research the psychic abilities granted by symbiont bonding. Understanding these alien powers may allow for enhanced control and development of new psycast techniques.
+
+This research unlocks advanced symbiont-based psycasts and meditation focuses.</description>
+    <baseCost>2500</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>FleshSymbiontStudy</li>
+      <li>Psycasting</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>9.00</researchViewX>
+    <researchViewY>3.00</researchViewY>
+    <tab>Anomaly</tab>
+    <modExtensions>
+      <li Class="ResearchModExtension_Royalty">
+        <requiredDLC>Royalty</requiredDLC>
+      </li>
+    </modExtensions>
+  </ResearchProjectDef>
+
+  <!-- Containment research -->
+  <ResearchProjectDef>
+    <defName>SymbiontContainment</defName>
+    <label>symbiont containment</label>
+    <description>Develop methods to safely contain and study flesh symbionts without risking widespread contamination. This research unlocks specialized containment facilities and protective equipment.
+
+Essential for colonies that wish to study symbionts while minimizing the risk of unwanted bonding.</description>
+    <baseCost>2000</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>FleshSymbiontStudy</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>8.00</researchViewX>
+    <researchViewY>5.00</researchViewY>
+    <tab>Anomaly</tab>
+  </ResearchProjectDef>
+
+  <!-- Purification research -->
+  <ResearchProjectDef>
+    <defName>SymbiontPurification</defName>
+    <label>symbiont purification</label>
+    <description>Research methods to safely sever symbiont bonds and purify corrupted colonists. This dangerous research may provide the only hope for those who wish to return bonded individuals to their natural state.
+
+WARNING: Forced purification attempts have a high failure rate and may result in severe psychological trauma or death.</description>
+    <baseCost>5000</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>SymbiontContainment</li>
+      <li>VitalsMonitor</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>8.00</researchViewX>
+    <researchViewY>6.00</researchViewY>
+    <tab>Anomaly</tab>
+  </ResearchProjectDef>
+
+  <!-- Advanced symbiont research -->
+  <ResearchProjectDef>
+    <defName>SymbiontMastery</defName>
+    <label>symbiont mastery</label>
+    <description>The ultimate understanding of flesh symbiont biology and psychology. This research represents the pinnacle of xenobiological study, potentially allowing for controlled symbiont cultivation and directed evolution.
+
+Only the most advanced colonies should attempt this research. The knowledge gained may fundamentally alter humanity's relationship with these alien entities.</description>
+    <baseCost>8000</baseCost>
+    <techLevel>Ultra</techLevel>
+    <prerequisites>
+      <li>SymbiontGenetics</li>
+      <li>SymbiontPsychics</li>
+      <li>SymbiontPurification</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>10.00</researchViewX>
+    <researchViewY>6.00</researchViewY>
+    <tab>Anomaly</tab>
+    <discoveredLetterTitle>Symbiont Mastery Achieved</discoveredLetterTitle>
+    <discoveredLetterText>Your researchers have achieved complete understanding of the flesh symbionts. This knowledge opens new possibilities for controlled symbiotic enhancement, but also reveals the true scope of the alien threat.
+
+The boundary between human and symbiont becomes increasingly meaningless. What price will you pay for transcendence?</discoveredLetterText>
+  </ResearchProjectDef>
+
+</Defs>
