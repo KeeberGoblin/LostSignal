@@ -3,7 +3,6 @@ using Verse;
 
 namespace FleshSymbiontMod
 {
-    // Static references to our defs for easy access in code
     [DefOf]
     public static class FleshSymbiontDefOf
     {
@@ -49,6 +48,10 @@ namespace FleshSymbiontMod
         // Research
         public static ResearchProjectDef FleshSymbiontStudy;
         public static ResearchProjectDef SymbiontGenetics;
+        public static ResearchProjectDef SymbiontPsychics;
+        public static ResearchProjectDef SymbiontContainment;
+        public static ResearchProjectDef SymbiontPurification;
+        public static ResearchProjectDef SymbiontMastery;
         
         // Recipes
         public static RecipeDef ExtractSymbiontXenogerm;
@@ -59,11 +62,8 @@ namespace FleshSymbiontMod
         public static AbilityDef SymbiontRage;
         public static AbilityDef SymbiontTrackPrey;
         public static AbilityDef SymbiontDrainLife;
-        public static AbilityDef SymbiontDevour;
         public static AbilityDef SymbiontNetworkLink;
         public static AbilityDef SymbiontPsychicScream;
-        public static AbilityDef SymbiontShareSkill;
-        public static AbilityDef SymbiontNetworkCommand;
         
         // Ability Groups
         public static AbilityGroupDef Symbiont;
@@ -90,7 +90,7 @@ namespace FleshSymbiontMod
         // Memes (Ideology)
         public static MemeDef FleshTranscendence;
         
-        // Rituals (Ideology) - Only declare once
+        // Rituals (Ideology)
         public static RitualPatternDef SymbiontCommunion;
         
         // Meditation Focus (Royalty)
@@ -103,6 +103,8 @@ namespace FleshSymbiontMod
         public static SoundDef BondingScream;
         public static SoundDef SymbiontFeed;
         public static SoundDef PsycastActivate;
+        public static SoundDef SymbiontHeal;
+        public static SoundDef SymbiontRage;
         public static SoundDef RitualChant;
         
         static FleshSymbiontDefOf()
