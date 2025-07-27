@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace FleshSymbiontMod
 {
-    // Custom incident worker that respects settings
     public class IncidentWorker_FleshSymbiontDiscovery : IncidentWorker
     {
         protected override bool CanFireNowSub(IncidentParms parms)
@@ -14,7 +13,7 @@ namespace FleshSymbiontMod
             // Check if we should limit symbionts per map
             if (FleshSymbiontSettings.limitSymbiontsPerMap)
             {
-                var existingSymbionts = map.listerBuildings.AllBuildingsColonistOfClass<Building_FleshSymbiont>().Count();
+                var existingSymbionts = map.GetSymbiontCount();
                 if (existingSymbionts >= FleshSymbiontSettings.maxSymbiontsPerMap)
                 {
                     return false;
@@ -30,6 +29,12 @@ namespace FleshSymbiontMod
                 }
             }
             
+            // Don't spawn if no valid location exists
+            if (SymbiontUtility.FindSymbiontSpawnLocation(map) == null)
+            {
+                return false;
+            }
+            
             return base.CanFireNowSub(parms);
         }
         
@@ -37,175 +42,234 @@ namespace FleshSymbiontMod
         {
             var map = (Map)parms.target;
             
-            // Find a suitable spawn location
-            IntVec3 spawnSpot;
-            if (!TryFindSpawnSpot(map, out spawnSpot))
+            // Find spawn location
+            var spawnLocation = SymbiontUtility.FindSymbiontSpawnLocation(map);
+            if (!spawnLocation.HasValue)
             {
+                Log.Warning("[Signal Lost] Could not find valid spawn location for flesh symbiont");
                 return false;
             }
             
-            // Spawn the symbiont
+            // Create and configure the symbiont
+            var symbiont = CreateSymbiont(map, spawnLocation.Value);
+            if (symbiont == null)
+            {
+                Log.Error("[Signal Lost] Failed to create flesh symbiont");
+                return false;
+            }
+            
+            // Create atmospheric spawn effects
+            CreateDiscoveryEffects(spawnLocation.Value, map);
+            
+            // Send discovery letter
+            SendDiscoveryLetter(symbiont);
+            
+            // Schedule follow-up events
+            ScheduleFollowUpEvents(map);
+            
+            return true;
+        }
+        
+        private Building_FleshSymbiont CreateSymbiont(Map map, IntVec3 spawnLocation)
+        {
             var symbiont = (Building_FleshSymbiont)ThingMaker.MakeThing(FleshSymbiontDefOf.FleshSymbiont);
+            if (symbiont == null) return null;
+            
+            // Set faction (usually player, but could be neutral for mystery)
             symbiont.SetFaction(Faction.OfPlayer);
             
             // Apply health multiplier from settings
             if (FleshSymbiontSettings.symbiontHealthMultiplier != 1.0f)
             {
-                symbiont.HitPoints = Mathf.RoundToInt(symbiont.MaxHitPoints * FleshSymbiontSettings.symbiontHealthMultiplier);
+                int modifiedHealth = Mathf.RoundToInt(symbiont.MaxHitPoints * FleshSymbiontSettings.symbiontHealthMultiplier);
+                symbiont.HitPoints = modifiedHealth;
             }
             
-            GenSpawn.Spawn(symbiont, spawnSpot, map);
+            // Spawn the symbiont
+            GenSpawn.Spawn(symbiont, spawnLocation, map);
             
-            // Create atmospheric effects around the spawn
-            if (FleshSymbiontSettings.enableAtmosphericEffects)
+            return symbiont;
+        }
+        
+        private void CreateDiscoveryEffects(IntVec3 location, Map map)
+        {
+            if (!FleshSymbiontSettings.enableAtmosphericEffects) return;
+            
+            // Dramatic emergence effects
+            for (int i = 0; i < 15; i++)
             {
-                CreateSpawnEffects(spawnSpot, map);
+                var effectPos = location.ToVector3() + Gen.RandomHorizontalVector(4f);
+                MoteMaker.ThrowDustPuff(effectPos, map, 2.0f);
             }
             
-            // Send letter with appropriate intensity
+            // Heat signature
+            MoteMaker.ThrowHeatGlow(location, map, 3f);
+            
+            // Alien energy discharge
+            for (int i = 0; i < 8; i++)
+            {
+                MoteMaker.ThrowMicroSparks(location.ToVector3() + Gen.RandomHorizontalVector(2f), map);
+            }
+            
+            // Lightning effect for dramatic reveal
+            MoteMaker.ThrowLightningGlow(location.ToVector3(), map, 2.5f);
+            
+            // Sound effect
+            FleshSymbiontDefOf.SymbiontPulse?.PlayOneShot(new TargetInfo(location, map));
+        }
+        
+        private void SendDiscoveryLetter(Building_FleshSymbiont symbiont)
+        {
             string letterText = GetDiscoveryLetterText();
-            SendStandardLetter(def.letterLabel, letterText, def.letterDef, parms, symbiont);
+            string letterLabel = GetDiscoveryLetterLabel();
             
-            return true;
+            SendStandardLetter(letterLabel, letterText, def.letterDef, symbiont, null);
         }
         
-        private bool TryFindSpawnSpot(Map map, out IntVec3 spawnSpot)
+        private string GetDiscoveryLetterLabel()
         {
-            // Try to find a good spawn location
-            // Prefer areas that are:
-            // 1. Not too close to existing buildings
-            // 2. Accessible to colonists
-            // 3. Not in forbidden areas
-            // 4. Have some cover/natural feel
-            
-            // First try: Find a spot near natural rock or in a cave
-            if (CellFinder.TryFindRandomCellNear(
-                map.Center, map, Mathf.RoundToInt(map.Size.x * 0.4f),
-                cell => IsGoodSymbiontSpawnCell(cell, map) && HasNearbyRock(cell, map),
-                out spawnSpot))
+            return FleshSymbiontSettings.messageFrequency switch
             {
-                return true;
-            }
-            
-            // Second try: Any accessible outdoor location
-            if (CellFinder.TryFindRandomCellNear(
-                map.Center, map, Mathf.RoundToInt(map.Size.x * 0.3f),
-                cell => IsGoodSymbiontSpawnCell(cell, map),
-                out spawnSpot))
-            {
-                return true;
-            }
-            
-            // Last resort: Edge spawn
-            if (CellFinder.TryFindRandomEdgeCellWith(
-                cell => IsGoodSymbiontSpawnCell(cell, map),
-                map, CellFinder.EdgeRoadChance_Neutral, out spawnSpot))
-            {
-                return true;
-            }
-            
-            spawnSpot = IntVec3.Invalid;
-            return false;
-        }
-        
-        private bool IsGoodSymbiontSpawnCell(IntVec3 cell, Map map)
-        {
-            // Basic requirements
-            if (!cell.Standable(map) || cell.Fogged(map))
-                return false;
-            
-            // Must be reachable by colonists
-            if (!map.reachability.CanReachColony(cell))
-                return false;
-            
-            // Don't spawn too close to existing buildings
-            if (cell.GetEdifice(map) != null)
-                return false;
-            
-            // Don't spawn in rooms if possible
-            var room = cell.GetRoom(map);
-            if (room != null && room.IsHall)
-                return false;
-            
-            // Avoid spawn points too close to other symbionts
-            var nearbySymbionts = map.listerBuildings.AllBuildingsColonistOfClass<Building_FleshSymbiont>();
-            foreach (var symbiont in nearbySymbionts)
-            {
-                if (cell.DistanceTo(symbiont.Position) < 20)
-                    return false;
-            }
-            
-            return true;
-        }
-        
-        private bool HasNearbyRock(IntVec3 cell, Map map)
-        {
-            // Check for natural rock walls within 3 tiles
-            for (int i = -3; i <= 3; i++)
-            {
-                for (int j = -3; j <= 3; j++)
-                {
-                    var checkCell = cell + new IntVec3(i, 0, j);
-                    if (checkCell.InBounds(map))
-                    {
-                        var edifice = checkCell.GetEdifice(map);
-                        if (edifice != null && edifice.def.building.isNaturalRock)
-                            return true;
-                    }
-                }
-            }
-            return false;
-        }
-        
-        private void CreateSpawnEffects(IntVec3 position, Map map)
-        {
-            // Create dramatic spawn effects
-            for (int i = 0; i < 12; i++)
-            {
-                var effectPos = position.ToVector3() + Gen.RandomHorizontalVector(3f);
-                MoteMaker.ThrowDustPuff(effectPos, map, 1.5f);
-            }
-            
-            // Heat glow effect
-            MoteMaker.ThrowHeatGlow(position, map, 2f);
-            
-            // Micro sparks for alien energy
-            for (int i = 0; i < 6; i++)
-            {
-                MoteMaker.ThrowMicroSparks(position.ToVector3() + Gen.RandomHorizontalVector(1f), map);
-            }
+                3 => "CLASSIFIED: Signal Lost",
+                2 => "Anomalous Discovery",
+                1 => "Flesh Symbiont Found",
+                _ => def.letterLabel ?? "Discovery"
+            };
         }
         
         private string GetDiscoveryLetterText()
         {
             if (!FleshSymbiontSettings.enableHorrorMessages)
-                return def.letterText;
+                return GetGenericDiscoveryText();
             
-            if (FleshSymbiontSettings.messageFrequency == 3)
+            return FleshSymbiontSettings.messageFrequency switch
             {
-                return "CLASSIFIED FIELD REPORT - PRIORITY ALPHA\n\n" +
-                       "Excavation team has uncovered what can only be described as a biological anomaly of unknown origin. " +
-                       "The artifact exhibits characteristics of both organic tissue and advanced biotechnology. " +
-                       "Preliminary scans detect complex neural activity and what appears to be a form of directed intelligence.\n\n" +
-                       "WARNING: Personnel report experiencing auditory hallucinations and compulsive behavior when in proximity to the specimen. " +
-                       "Dr. Martinez described the entity as 'beautiful' and 'calling to her' before requiring restraint.\n\n" +
-                       "Recommend immediate establishment of security perimeter. Do not allow unsupervised contact.";
-            }
-            else if (FleshSymbiontSettings.messageFrequency == 2)
-            {
-                return "Your colonists have discovered a pulsing, organic mass buried in the ground. The ribbed, hand-like appendage seems to twitch with its own life force.\n\n" +
-                       "Something about its biomechanical appearance fills your colonists with unease. The flesh appears to be waiting... hungry.\n\n" +
-                       "One of your colonists feels inexplicably drawn to touch it.";
-            }
-            else if (FleshSymbiontSettings.messageFrequency == 1)
-            {
-                return "Your colonists have discovered a strange organic artifact. Some of them seem drawn to it.";
-            }
-            
-            return def.letterText;
+                3 => GetMaximumHorrorText(),
+                2 => GetModerateHorrorText(),
+                1 => GetMinimalHorrorText(),
+                _ => GetGenericDiscoveryText()
+            };
         }
         
-        // Remove the problematic AdjustedChance override - use BaseChanceThisGame instead
-        public override float BaseChanceThisGame => base.BaseChanceThisGame * FleshSymbiontSettings.eventFrequencyMultiplier;
+        private string GetMaximumHorrorText()
+        {
+            return "CLASSIFIED TRANSMISSION LOG - SECTOR 7G-EPSILON\n" +
+                   "PRIORITY: ALPHA-BLACK\n\n" +
+                   "Our excavation team has uncovered what can only be described as a biological anomaly of unknown origin. " +
+                   "The artifact exhibits characteristics of both organic tissue and advanced biotechnology that defies current understanding.\n\n" +
+                   "Preliminary scans detect complex neural activity and what appears to be a form of directed intelligence. " +
+                   "Personnel report experiencing auditory hallucinations and compulsive behavior when in proximity to the specimen. " +
+                   "Dr. Martinez described the entity as 'beautiful' and 'calling to her' before requiring immediate sedation.\n\n" +
+                   "The creature's surface pulses with an organic rhythm that seems to synchronize with nearby human heartbeats. " +
+                   "Ribbed appendages emerge from its mass, twitching with predatory awareness.\n\n" +
+                   "WARNING: Do not allow unsupervised contact with the entity. Maintain minimum safe distance of 50 meters. " +
+                   "All personnel exhibiting unusual behavior must be quarantined immediately.\n\n" +
+                   "The signal we've been tracking has gone silent. Something is awakening.";
+        }
+        
+        private string GetModerateHorrorText()
+        {
+            return "Your colonists have discovered a massive, pulsing organic mass buried in the ground. " +
+                   "The creature's ribbed, hand-like appendage seems to twitch with its own life force, " +
+                   "while complex networks beneath its translucent flesh suggest advanced intelligence.\n\n" +
+                   "Something about its biomechanical appearance fills your colonists with unease. " +
+                   "The flesh appears to be waiting... hungry. Several colonists report hearing faint whispers " +
+                   "when they venture too close.\n\n" +
+                   "One of your colonists feels inexplicably drawn to touch it.";
+        }
+        
+        private string GetMinimalHorrorText()
+        {
+            return "Your colonists have discovered a strange organic artifact of unknown origin. " +
+                   "The creature exhibits signs of intelligence and several colonists seem drawn to it.\n\n" +
+                   "Caution is advised when interacting with this entity.";
+        }
+        
+        private string GetGenericDiscoveryText()
+        {
+            return def.letterText ?? "A flesh symbiont has been discovered.";
+        }
+        
+        private void ScheduleFollowUpEvents(Map map)
+        {
+            // Increase chance of additional symbiont events if this one was successful
+            if (FleshSymbiontSettings.eventFrequencyMultiplier > 1.0f)
+            {
+                // Schedule potential follow-up discovery in the future
+                float daysUntilNext = Rand.Range(
+                    FleshSymbiontSettings.minDaysBetweenEvents * 0.7f,
+                    FleshSymbiontSettings.maxDaysBetweenEvents * 0.8f
+                );
+                
+                // This would require custom event scheduling - placeholder for now
+                if (Prefs.DevMode)
+                {
+                    Log.Message($"[Signal Lost] Next potential symbiont event in ~{daysUntilNext:F0} days");
+                }
+            }
+        }
+        
+        public override float BaseChanceThisGame => 
+            base.BaseChanceThisGame * FleshSymbiontSettings.eventFrequencyMultiplier;
+            
+        protected override float AdjustedChance
+        {
+            get
+            {
+                float baseChance = base.AdjustedChance;
+                
+                // Reduce chance if many symbionts already exist
+                var playerMaps = Find.Maps?.Where(m => m.IsPlayerHome) ?? Enumerable.Empty<Map>();
+                int totalSymbionts = playerMaps.Sum(m => m.GetSymbiontCount());
+                
+                if (totalSymbionts > 0)
+                {
+                    baseChance *= Mathf.Pow(0.7f, totalSymbionts); // Diminishing returns
+                }
+                
+                // Increase chance based on colony wealth (late game colonies get more events)
+                float wealthFactor = Find.StoryWatcher?.watcherWealth?.WealthTotal ?? 0f;
+                if (wealthFactor > 100000f) // 100k+ wealth
+                {
+                    baseChance *= 1.2f;
+                }
+                
+                return baseChance;
+            }
+        }
+        
+        public override void ResolveReferences()
+        {
+            base.ResolveReferences();
+            
+            // Validate settings on load
+            if (FleshSymbiontSettings.minDaysBetweenEvents > FleshSymbiontSettings.maxDaysBetweenEvents)
+            {
+                Log.Warning("[Signal Lost] Invalid day range settings, fixing automatically");
+                FleshSymbiontSettings.maxDaysBetweenEvents = FleshSymbiontSettings.minDaysBetweenEvents + 30;
+            }
+        }
+        
+        // Debug method for testing
+        public bool TryExecuteDebug(Map map, IntVec3? forceLocation = null)
+        {
+            if (!Prefs.DevMode) return false;
+            
+            var parms = StorytellerUtility.DefaultParmsNow(def.category, map);
+            
+            if (forceLocation.HasValue)
+            {
+                // Force spawn at specific location for debugging
+                var symbiont = CreateSymbiont(map, forceLocation.Value);
+                if (symbiont != null)
+                {
+                    CreateDiscoveryEffects(forceLocation.Value, map);
+                    Messages.Message("DEBUG: Forced symbiont spawn", symbiont, MessageTypeDefOf.NeutralEvent);
+                    return true;
+                }
+            }
+            
+            return TryExecuteWorker(parms);
+        }
     }
 }
