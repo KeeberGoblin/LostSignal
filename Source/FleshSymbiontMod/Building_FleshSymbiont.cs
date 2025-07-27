@@ -10,20 +10,29 @@ namespace FleshSymbiontMod
     {
         private int ticksSinceLastBond = 0;
         private int ticksSinceLastFeed = 0;
-        private int hungerLevel = 0; // 0-3, increases chance of compulsion
+        private int hungerLevel = 0;
         private List<Pawn> bondedPawns = new List<Pawn>();
         private int pulseTimer = 0;
         private CompGlower glowerComp;
         
-        private const int COMPULSION_BASE_INTERVAL = 45000; // ~30 in-game hours
-        private const int FEED_INTERVAL = 30000; // ~20 in-game hours
-        private const int HUNGER_INCREASE_INTERVAL = 60000; // ~40 in-game hours
-        private const int PULSE_INTERVAL = 120; // ~2 seconds real time
+        private const int COMPULSION_BASE_INTERVAL = 45000;
+        private const int FEED_INTERVAL = 30000;
+        private const int HUNGER_INCREASE_INTERVAL = 60000;
+        private const int PULSE_INTERVAL = 120;
+        
+        public int HungerLevel => hungerLevel;
+        public IReadOnlyList<Pawn> BondedPawns => bondedPawns.AsReadOnly();
         
         public override void SpawnSetup(Map map, bool respawningAfterLoad)
         {
             base.SpawnSetup(map, respawningAfterLoad);
             glowerComp = GetComp<CompGlower>();
+            
+            if (!respawningAfterLoad)
+            {
+                // Initial spawn effects
+                CreateSpawnEffects();
+            }
         }
         
         public override void ExposeData()
@@ -32,13 +41,14 @@ namespace FleshSymbiontMod
             Scribe_Values.Look(ref ticksSinceLastBond, "ticksSinceLastBond", 0);
             Scribe_Values.Look(ref ticksSinceLastFeed, "ticksSinceLastFeed", 0);
             Scribe_Values.Look(ref hungerLevel, "hungerLevel", 0);
+            Scribe_Values.Look(ref pulseTimer, "pulseTimer", 0);
             Scribe_Collections.Look(ref bondedPawns, "bondedPawns", LookMode.Reference);
             
             if (bondedPawns == null)
                 bondedPawns = new List<Pawn>();
         }
         
-        protected override void Tick() // Changed from public to protected
+        public override void Tick()
         {
             base.Tick();
             
@@ -48,147 +58,116 @@ namespace FleshSymbiontMod
             ticksSinceLastFeed++;
             pulseTimer++;
             
-            // Update bonded pawns list (remove dead/missing pawns)
-            bondedPawns.RemoveAll(p => p == null || p.Dead || !p.health.hediffSet.HasHediff(FleshSymbiontDefOf.SymbiontBond));
+            // Clean up bonded pawns list
+            CleanupBondedPawns();
             
-            // Pulsing glow effect
-            if (FleshSymbiontSettings.enableAtmosphericEffects && glowerComp != null)
+            // Update atmospheric effects
+            if (FleshSymbiontSettings.enableAtmosphericEffects)
             {
                 UpdatePulsingGlow();
-            }
-            
-            // Ambient pulsing sound
-            if (FleshSymbiontSettings.enableAtmosphericEffects && IsHashIntervalTick(300)) // Every 5 seconds
-            {
-                PlaySymbiontPulseSound();
-            }
-            
-            // Increase hunger over time
-            if (ticksSinceLastBond > (HUNGER_INCREASE_INTERVAL / FleshSymbiontSettings.hungerGrowthMultiplier))
-            {
-                hungerLevel = Mathf.Min(3, hungerLevel + 1);
-                ticksSinceLastBond = 0;
                 
-                if (hungerLevel >= 2 && FleshSymbiontSettings.enableHorrorMessages)
-                {
-                    string message = GetHungerMessage();
-                    
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        Messages.Message(message, this, MessageTypeDefOf.NegativeEvent);
-                    }
-                }
+                if (IsHashIntervalTick(300))
+                    PlaySymbiontPulseSound();
             }
             
-            // Try to compel someone
+            // Hunger progression
+            UpdateHungerState();
+            
+            // Try compulsion
             if (Rand.MTBEventOccurs(GetCompulsionMTB(), GenDate.TicksPerDay, 1f))
             {
                 TryCompelNearbyPawn();
             }
             
-            // Make bonded pawns feed the symbiont
+            // Make bonded pawns feed
             if (bondedPawns.Count > 0 && ticksSinceLastFeed > FEED_INTERVAL)
             {
-                var feeder = bondedPawns.RandomElement();
-                if (feeder != null && feeder.Spawned && feeder.Awake() && 
-                    feeder.CurJob?.def != FleshSymbiontDefOf.FeedSymbiont)
-                {
-                    var feedJob = JobMaker.MakeJob(FleshSymbiontDefOf.FeedSymbiont, this);
-                    feeder.jobs.TryTakeOrderedJob(feedJob, JobTag.Misc);
-                    ticksSinceLastFeed = 0;
-                }
+                TryMakeBondedPawnFeed();
             }
             
-            // Symbiont decay if enabled
+            // Decay if enabled
             if (FleshSymbiontSettings.enableSymbiontDecay && ticksSinceLastFeed > FEED_INTERVAL * 2)
             {
-                float damagePerTick = FleshSymbiontSettings.symbiontDecayRate / GenDate.TicksPerDay;
-                TakeDamage(new DamageInfo(DamageDefOf.Deterioration, damagePerTick));
+                ApplyDecayDamage();
             }
         }
         
-        private string GetHungerMessage()
+        private void CleanupBondedPawns()
         {
-            if (FleshSymbiontSettings.messageFrequency == 3)
-            {
-                return "The flesh symbiont writhes in ravenous hunger, its alien whispers growing into screams that claw at your colonists' minds...";
-            }
-            else if (FleshSymbiontSettings.messageFrequency == 2)
-            {
-                return "The flesh symbiont pulses hungrily, its whispers growing stronger...";
-            }
-            else if (FleshSymbiontSettings.messageFrequency == 1)
-            {
-                return "The flesh symbiont seems restless.";
-            }
-            
-            return "";
+            bondedPawns.RemoveAll(p => p == null || p.Dead || !p.IsSymbiontBonded());
         }
         
         private void UpdatePulsingGlow()
         {
-            if (glowerComp == null) return;
+            if (glowerComp?.Props == null) return;
             
-            // Create pulsing effect based on hunger level and pulse timer
-            float pulseIntensity = Mathf.Sin(pulseTimer * 0.05f) * 0.3f + 0.7f; // Oscillates between 0.4 and 1.0
-            
-            // Hunger affects pulse speed and intensity
+            float pulseIntensity = Mathf.Sin(pulseTimer * 0.05f) * 0.3f + 0.7f;
             float hungerMultiplier = 1f + (hungerLevel * 0.5f);
             pulseIntensity *= hungerMultiplier;
             
-            // Calculate glow color based on state
-            Color baseColor = GetGlowColor();
+            Color baseColor = hungerLevel switch
+            {
+                0 => new Color(0.6f, 0.2f, 0.2f),
+                1 => new Color(0.8f, 0.3f, 0.2f),
+                2 => new Color(1.0f, 0.4f, 0.1f),
+                3 => new Color(1.0f, 0.2f, 0.2f),
+                _ => new Color(0.6f, 0.2f, 0.2f)
+            };
             
-            // Apply pulse intensity
-            Color currentColor = baseColor * pulseIntensity;
+            glowerComp.Props.glowColor = baseColor * pulseIntensity;
             
-            // Update the glow component
-            glowerComp.Props.glowColor = currentColor;
-            
-            // Reset pulse timer to prevent overflow
             if (pulseTimer > 1000)
                 pulseTimer = 0;
         }
         
-        private Color GetGlowColor()
-        {
-            if (hungerLevel == 0)
-                return new Color(0.6f, 0.2f, 0.2f); // Dormant: Dark red
-            else if (hungerLevel == 1)
-                return new Color(0.8f, 0.3f, 0.2f); // Restless: Brighter red
-            else if (hungerLevel == 2)
-                return new Color(1.0f, 0.4f, 0.1f); // Hungry: Orange-red
-            else if (hungerLevel == 3)
-                return new Color(1.0f, 0.2f, 0.2f); // Ravenous: Bright red
-            else
-                return new Color(0.6f, 0.2f, 0.2f);
-        }
-        
         private void PlaySymbiontPulseSound()
         {
-            if (Map?.info?.parent?.def?.defName == "World") return; // Don't play on world map
+            if (Map?.info?.parent?.def?.defName == "World") return;
             
-            // Play pulsing sound with volume based on hunger level
-            float volume = 0.3f + (hungerLevel * 0.2f);
+            FleshSymbiontDefOf.SymbiontPulse?.PlayOneShot(new TargetInfo(this));
+        }
+        
+        private void UpdateHungerState()
+        {
+            float hungerInterval = HUNGER_INCREASE_INTERVAL / FleshSymbiontSettings.hungerGrowthMultiplier;
             
-            var soundDef = SoundDef.Named("SymbiontPulse");
-            if (soundDef != null)
+            if (ticksSinceLastBond > hungerInterval)
             {
-                soundDef.PlayOneShot(new TargetInfo(this));
+                int previousHunger = hungerLevel;
+                hungerLevel = Mathf.Min(3, hungerLevel + 1);
+                ticksSinceLastBond = 0;
+                
+                if (hungerLevel > previousHunger && hungerLevel >= 2)
+                {
+                    ShowHungerMessage();
+                }
+            }
+        }
+        
+        private void ShowHungerMessage()
+        {
+            if (!FleshSymbiontSettings.enableHorrorMessages) return;
+            
+            string message = FleshSymbiontSettings.messageFrequency switch
+            {
+                3 => "The flesh symbiont writhes in ravenous hunger, its alien whispers growing into screams that claw at your colonists' minds. The very air around it seems to pulse with malevolent need...",
+                2 => "The flesh symbiont pulses hungrily, its whispers growing stronger and more insistent...",
+                1 => "The flesh symbiont seems increasingly restless.",
+                _ => ""
+            };
+            
+            if (!string.IsNullOrEmpty(message))
+            {
+                Messages.Message(message, this, MessageTypeDefOf.NegativeEvent);
             }
         }
         
         private float GetCompulsionMTB()
         {
             float baseMTB = COMPULSION_BASE_INTERVAL / GenDate.TicksPerDay;
-            
-            // Apply settings multiplier
             baseMTB /= FleshSymbiontSettings.compulsionFrequencyMultiplier;
-            
-            // More hungry = more frequent compulsions
             baseMTB /= (1f + hungerLevel * 0.5f);
             
-            // Fewer bonded pawns = more aggressive
             if (bondedPawns.Count == 0)
                 baseMTB *= 0.5f;
             else if (bondedPawns.Count >= 3)
@@ -199,92 +178,167 @@ namespace FleshSymbiontMod
         
         private void TryCompelNearbyPawn()
         {
-            var pawns = Map.mapPawns.FreeColonistsSpawned
+            var validTargets = Map.mapPawns.FreeColonistsSpawned
                 .Where(p => p.Position.DistanceTo(Position) <= FleshSymbiontSettings.maxCompulsionRange && 
-                  p.IsValidSymbiontTarget()) // Use extension method
+                           p.IsValidSymbiontTarget())
                 .OrderBy(p => p.Position.DistanceTo(Position));
                 
-            var target = pawns.FirstOrDefault();
-            if (target != null)
+            var target = validTargets.FirstOrDefault();
+            if (target == null) return;
+            
+            // Play compulsion sound
+            if (FleshSymbiontSettings.enableAtmosphericEffects)
             {
-                // Play compulsion sound
-                if (FleshSymbiontSettings.enableAtmosphericEffects)
-                {
-                    var compulsionSound = SoundDef.Named("SymbiontWhisper");
-                    compulsionSound?.PlayOneShot(new TargetInfo(target));
-                }
+                FleshSymbiontDefOf.SymbiontWhisper?.PlayOneShot(new TargetInfo(target));
+            }
+            
+            // Check resistance
+            float resistanceChance = target.GetSymbiontCompulsionResistance();
+            if (FleshSymbiontSettings.allowCompulsionResistance && Rand.Chance(resistanceChance))
+            {
+                HandleCompulsionResistance(target);
+                return;
+            }
+            
+            // Apply compulsion
+            bool success = target.mindState.mentalStateHandler.TryStartMentalState(
+                FleshSymbiontDefOf.SymbiontCompulsion,
+                "Compelled by flesh symbiont",
+                true,
+                causedByMood: false);
                 
-                // Check for resistance
-                if (FleshSymbiontSettings.allowCompulsionResistance && 
-                    Rand.Chance(FleshSymbiontSettings.compulsionResistanceChance))
-                {
-                    // Play resistance static sound
-                    if (FleshSymbiontSettings.enableAtmosphericEffects)
-                    {
-                        var staticSound = SoundDef.Named("CompulsionStatic");
-                        staticSound?.PlayOneShot(new TargetInfo(target));
-                    }
-                    
-                    if (FleshSymbiontSettings.enableHorrorMessages)
-                    {
-                        Messages.Message($"{target.Name.ToStringShort} resists the symbiont's psychic whispers through sheer willpower!", 
-                            target, MessageTypeDefOf.PositiveEvent);
-                    }
-                    return;
-                }
+            if (success && FleshSymbiontSettings.enableHorrorMessages)
+            {
+                ShowCompulsionMessage(target);
+            }
+        }
+        
+        private void HandleCompulsionResistance(Pawn target)
+        {
+            if (FleshSymbiontSettings.enableAtmosphericEffects)
+            {
+                FleshSymbiontDefOf.CompulsionStatic?.PlayOneShot(new TargetInfo(target));
+            }
+            
+            if (FleshSymbiontSettings.enableHorrorMessages)
+            {
+                Messages.Message($"{target.Name.ToStringShort} resists the symbiont's psychic whispers through sheer willpower!", 
+                    target, MessageTypeDefOf.PositiveEvent);
+            }
+        }
+        
+        private void ShowCompulsionMessage(Pawn target)
+        {
+            string message = Extensions.GetHorrorIntensityMessage(
+                $"{target.Name.ToStringShort} is being compelled by the symbiont.",
+                $"{target.Name.ToStringShort} staggers as alien whispers flood their mind, compelling them toward the flesh symbiont...",
+                $"{target.Name.ToStringShort}'s pupils dilate unnaturally as otherworldly whispers claw at their consciousness. They turn toward the symbiont with vacant, predatory hunger."
+            );
+            
+            if (!string.IsNullOrEmpty(message))
+            {
+                Messages.Message(message, target, MessageTypeDefOf.NegativeEvent);
+            }
+        }
+        
+        private void TryMakeBondedPawnFeed()
+        {
+            var availableFeeders = bondedPawns.Where(p => 
+                p?.Spawned == true && 
+                p.Awake() && 
+                p.CurJob?.def != FleshSymbiontDefOf.FeedSymbiont).ToList();
                 
-                target.mindState.mentalStateHandler.TryStartMentalState(
-                    FleshSymbiontDefOf.SymbiontCompulsion, 
-                    "Compelled by flesh symbiont", 
-                    true, 
-                    causedByMood: false);
+            if (!availableFeeders.Any()) return;
+            
+            var feeder = availableFeeders.RandomElement();
+            var feedJob = JobMaker.MakeJob(FleshSymbiontDefOf.FeedSymbiont, this);
+            feeder.jobs.TryTakeOrderedJob(feedJob, JobTag.Misc);
+            ticksSinceLastFeed = 0;
+        }
+        
+        private void ApplyDecayDamage()
+        {
+            float damagePerTick = FleshSymbiontSettings.symbiontDecayRate / GenDate.TicksPerDay;
+            TakeDamage(new DamageInfo(DamageDefOf.Deterioration, damagePerTick));
+        }
+        
+        private void CreateSpawnEffects()
+        {
+            if (!FleshSymbiontSettings.enableAtmosphericEffects) return;
+            
+            for (int i = 0; i < 12; i++)
+            {
+                var effectPos = DrawPos + Gen.RandomHorizontalVector(3f);
+                MoteMaker.ThrowDustPuff(effectPos, Map, 1.5f);
+            }
+            
+            MoteMaker.ThrowHeatGlow(Position, Map, 2f);
+            
+            for (int i = 0; i < 6; i++)
+            {
+                MoteMaker.ThrowMicroSparks(DrawPos + Gen.RandomHorizontalVector(1f), Map);
             }
         }
         
         public void OnPawnBonded(Pawn pawn)
         {
-            if (!bondedPawns.Contains(pawn))
+            if (pawn == null || bondedPawns.Contains(pawn)) return;
+            
+            bondedPawns.Add(pawn);
+            hungerLevel = Mathf.Max(0, hungerLevel - 1);
+            ticksSinceLastBond = 0;
+            
+            // Effects and sounds
+            if (FleshSymbiontSettings.enableAtmosphericEffects)
             {
-                bondedPawns.Add(pawn);
-                hungerLevel = Mathf.Max(0, hungerLevel - 1);
-                ticksSinceLastBond = 0;
-                
-                // Play bonding sound
-                if (FleshSymbiontSettings.enableAtmosphericEffects)
+                FleshSymbiontDefOf.BondingScream?.PlayOneShot(new TargetInfo(pawn));
+                SymbiontUtility.CreateBondingEffects(pawn, this);
+            }
+            
+            // Grant abilities if Royalty is active
+            GrantSymbiontAbilities(pawn);
+            
+            if (FleshSymbiontSettings.enableHorrorMessages)
+            {
+                ShowBondingMessage(pawn);
+            }
+        }
+        
+        private void GrantSymbiontAbilities(Pawn pawn)
+        {
+            if (!ModsConfig.RoyaltyActive || !FleshSymbiontSettings.enableRoyaltyFeatures || 
+                !FleshSymbiontSettings.enableSymbiontPsycasts || pawn.abilities == null) return;
+            
+            var abilities = new[]
+            {
+                FleshSymbiontDefOf.SymbiontCompel,
+                FleshSymbiontDefOf.SymbiontHeal,
+                FleshSymbiontDefOf.SymbiontRage
+            };
+            
+            foreach (var ability in abilities)
+            {
+                if (ability != null && !pawn.abilities.HasAbility(ability))
                 {
-                    var bondingSound = SoundDef.Named("BondingScream");
-                    bondingSound?.PlayOneShot(new TargetInfo(pawn));
-                }
-                
-                if (FleshSymbiontSettings.enableHorrorMessages)
-                {
-                    string message = GetBondingMessage(pawn);
-                    
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        Messages.Message(message, this, MessageTypeDefOf.NegativeEvent);
-                    }
+                    pawn.abilities.GainAbility(ability);
                 }
             }
         }
         
-        private string GetBondingMessage(Pawn pawn)
+        private void ShowBondingMessage(Pawn pawn)
         {
-            if (FleshSymbiontSettings.messageFrequency == 3)
+            string message = FleshSymbiontSettings.messageFrequency switch
             {
-                return $"The flesh symbiont's tendrils pierce deep into {pawn.Name.ToStringShort}'s spine with a wet, tearing sound. " +
-                       $"Their screams echo as alien flesh melds with human nervous tissue. The symbiont purrs with satisfaction...";
-            }
-            else if (FleshSymbiontSettings.messageFrequency == 2)
-            {
-                return $"The flesh symbiont has bonded with {pawn.Name.ToStringShort}. It seems... satisfied, for now.";
-            }
-            else if (FleshSymbiontSettings.messageFrequency == 1)
-            {
-                return $"{pawn.Name.ToStringShort} has bonded with the symbiont.";
-            }
+                3 => $"The flesh symbiont's tendrils pierce deep into {pawn.Name.ToStringShort}'s spine with a wet, tearing sound. Their screams echo as alien flesh melds with human nervous tissue. The symbiont purrs with satisfaction as another soul is claimed...",
+                2 => $"The flesh symbiont has bonded with {pawn.Name.ToStringShort}. It seems... satisfied, for now.",
+                1 => $"{pawn.Name.ToStringShort} has bonded with the symbiont.",
+                _ => ""
+            };
             
-            return "";
+            if (!string.IsNullOrEmpty(message))
+            {
+                Messages.Message(message, this, MessageTypeDefOf.NegativeEvent);
+            }
         }
         
         public void OnSymbiontFed()
@@ -295,27 +349,20 @@ namespace FleshSymbiontMod
         
         public void OnXenogermExtracted()
         {
-            // Damage the symbiont from extraction
+            // Apply extraction damage
             if (FleshSymbiontSettings.xenogermExtractionDamage > 0)
             {
                 float damage = MaxHitPoints * FleshSymbiontSettings.xenogermExtractionDamage;
                 TakeDamage(new DamageInfo(DamageDefOf.Cut, damage));
             }
             
-            // Make bonded pawns upset
-            foreach (var pawn in bondedPawns.Where(p => p != null && !p.Dead))
+            // Upset bonded pawns
+            foreach (var pawn in bondedPawns.Where(p => p?.Dead == false))
             {
-                try
-                {
-                    var thought = ThoughtMaker.MakeThought(ThoughtDef.Named("SymbiontHarvested"));
-                    pawn.needs.mood.thoughts.memories.TryGainMemory(thought);
-                }
-                catch
-                {
-                    // Thought doesn't exist, skip
-                }
+                var thought = ThoughtMaker.MakeThought(FleshSymbiontDefOf.SymbiontHarvested);
+                pawn.needs?.mood?.thoughts?.memories?.TryGainMemory(thought);
                 
-                // Small chance of madness from violation
+                // Chance of madness
                 if (Rand.Chance(0.2f))
                 {
                     pawn.mindState.mentalStateHandler.TryStartMentalState(
@@ -328,20 +375,17 @@ namespace FleshSymbiontMod
             
             if (FleshSymbiontSettings.enableHorrorMessages)
             {
-                Messages.Message("The flesh symbiont shudders as genetic material is extracted. " +
-                                "Its bonded servants sense the violation...", 
+                Messages.Message("The flesh symbiont shudders as genetic material is extracted. Its bonded servants sense the violation...", 
                     this, MessageTypeDefOf.NegativeEvent);
             }
         }
         
         public override void Destroy(DestroyMode mode = DestroyMode.Vanish)
         {
-            // Bonded pawns go berserk if symbiont is destroyed (if setting enabled)
             if (FleshSymbiontSettings.bondedDefendsSymbiont && FleshSymbiontSettings.allowSymbiontDestruction)
             {
-                foreach (var pawn in bondedPawns.Where(p => p != null && !p.Dead))
+                foreach (var pawn in bondedPawns.Where(p => p?.Dead == false))
                 {
-                    // Scale aggression based on settings
                     var madnessDef = FleshSymbiontSettings.defenseAggressionLevel > 1.5f ? 
                         FleshSymbiontDefOf.SymbiontMadness : 
                         MentalStateDefOf.Berserk;
@@ -366,24 +410,15 @@ namespace FleshSymbiontMod
                 str += $"\nBonded pawns: {bondedPawns.Count}";
             }
             
-            string hungerDesc = GetHungerDescription();
+            string hungerDesc = Extensions.GetSymbiontStateDescription(hungerLevel);
             str += $"\nState: {hungerDesc}";
             
+            if (Prefs.DevMode)
+            {
+                str += $"\nDEV: Hunger {hungerLevel}, Ticks since bond: {ticksSinceLastBond}, Ticks since feed: {ticksSinceLastFeed}";
+            }
+            
             return str;
-        }
-        
-        private string GetHungerDescription()
-        {
-            if (hungerLevel == 0)
-                return "Dormant";
-            else if (hungerLevel == 1)
-                return "Restless";
-            else if (hungerLevel == 2)
-                return "Hungry";
-            else if (hungerLevel == 3)
-                return "Ravenous";
-            else
-                return "Unknown";
         }
     }
 }
