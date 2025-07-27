@@ -95,21 +95,17 @@ namespace FleshSymbiontMod
             Scribe_Values.Look(ref bondedDefendsSymbiont, "bondedDefendsSymbiont", true);
             Scribe_Values.Look(ref defenseAggressionLevel, "defenseAggressionLevel", 1.0f);
             
-            // Ideology integration
+            // DLC integration
             Scribe_Values.Look(ref enableIdeologyFeatures, "enableIdeologyFeatures", true);
             Scribe_Values.Look(ref enableRituals, "enableRituals", true);
             Scribe_Values.Look(ref ritualBenefitsMultiplier, "ritualBenefitsMultiplier", 1.0f);
             Scribe_Values.Look(ref enableMemePrecepts, "enableMemePrecepts", true);
-            
-            // Biotech integration
             Scribe_Values.Look(ref enableBiotechFeatures, "enableBiotechFeatures", true);
             Scribe_Values.Look(ref allowXenogermExtraction, "allowXenogermExtraction", true);
             Scribe_Values.Look(ref allowSymbiontHybridBirth, "allowSymbiontHybridBirth", true);
             Scribe_Values.Look(ref xenogermExtractionDamage, "xenogermExtractionDamage", 0.3f);
             Scribe_Values.Look(ref requireResearchForExtraction, "requireResearchForExtraction", true);
             Scribe_Values.Look(ref hybridTransformationChance, "hybridTransformationChance", 0.1f);
-            
-            // Royalty integration
             Scribe_Values.Look(ref enableRoyaltyFeatures, "enableRoyaltyFeatures", true);
             Scribe_Values.Look(ref enableSymbiontPsycasts, "enableSymbiontPsycasts", true);
             Scribe_Values.Look(ref royalsHateSymbionts, "royalsHateSymbionts", true);
@@ -136,6 +132,7 @@ namespace FleshSymbiontMod
     {
         private FleshSymbiontSettings settings;
         private Vector2 scrollPosition = Vector2.zero;
+        private string selectedTab = "general";
         
         public FleshSymbiontMod(ModContentPack content) : base(content)
         {
@@ -144,20 +141,61 @@ namespace FleshSymbiontMod
         
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            var contentRect = new Rect(0, 0, inRect.width - 20f, 1200f);
-            var viewRect = new Rect(0, 0, inRect.width, inRect.height);
+            var tabRect = new Rect(0, 0, inRect.width, 30f);
+            var contentRect = new Rect(0, 35f, inRect.width - 20f, inRect.height - 35f);
+            var scrollRect = new Rect(0, 0, contentRect.width - 20f, GetContentHeight());
             
-            Widgets.BeginScrollView(viewRect, ref scrollPosition, contentRect);
+            // Tab buttons
+            DrawTabs(tabRect);
+            
+            // Scrollable content
+            Widgets.BeginScrollView(contentRect, ref scrollPosition, scrollRect);
             
             var listing = new Listing_Standard();
-            listing.Begin(contentRect);
+            listing.Begin(scrollRect);
             
-            // Header
-            listing.Label("Signal Lost Settings", -1, "Configure the horror experience to your liking");
-            listing.Gap(12f);
+            switch (selectedTab)
+            {
+                case "general": DrawGeneralSettings(listing); break;
+                case "behavior": DrawBehaviorSettings(listing); break;
+                case "horror": DrawHorrorSettings(listing); break;
+                case "dlc": DrawDLCSettings(listing); break;
+                case "balance": DrawBalanceSettings(listing); break;
+            }
             
-            // Event Frequency Section
+            listing.End();
+            Widgets.EndScrollView();
+        }
+        
+        private void DrawTabs(Rect rect)
+        {
+            var tabWidth = rect.width / 5f;
+            var tabs = new[]
+            {
+                ("general", "General"),
+                ("behavior", "Behavior"),
+                ("horror", "Horror"),
+                ("dlc", "DLC Features"),
+                ("balance", "Balance")
+            };
+            
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                var tabRect = new Rect(i * tabWidth, rect.y, tabWidth, rect.height);
+                bool isSelected = selectedTab == tabs[i].Item1;
+                
+                if (Widgets.ButtonText(tabRect, tabs[i].Item2, true, true, isSelected))
+                {
+                    selectedTab = tabs[i].Item1;
+                    scrollPosition = Vector2.zero;
+                }
+            }
+        }
+        
+        private void DrawGeneralSettings(Listing_Standard listing)
+        {
             listing.Label("Event Frequency", -1, "How often flesh symbiont events occur");
+            
             FleshSymbiontSettings.eventFrequencyMultiplier = listing.SliderLabeled(
                 $"Event frequency: {FleshSymbiontSettings.eventFrequencyMultiplier:F1}x", 
                 FleshSymbiontSettings.eventFrequencyMultiplier, 0.1f, 3.0f);
@@ -170,10 +208,27 @@ namespace FleshSymbiontMod
                 $"Maximum days between events: {FleshSymbiontSettings.maxDaysBetweenEvents}", 
                 FleshSymbiontSettings.maxDaysBetweenEvents, 
                 FleshSymbiontSettings.minDaysBetweenEvents + 10, 400);
+                
+            // Validation
+            FleshSymbiontSettings.maxDaysBetweenEvents = Mathf.Max(
+                FleshSymbiontSettings.minDaysBetweenEvents + 10, 
+                FleshSymbiontSettings.maxDaysBetweenEvents);
+                
             listing.Gap(12f);
             
-            // Symbiont Behavior Section
-            listing.Label("Symbiont Behavior", -1, "How aggressive and active symbionts are");
+            listing.Label("Symbiont Durability");
+            FleshSymbiontSettings.symbiontHealthMultiplier = listing.SliderLabeled(
+                $"Symbiont health: {FleshSymbiontSettings.symbiontHealthMultiplier:F1}x", 
+                FleshSymbiontSettings.symbiontHealthMultiplier, 0.1f, 5.0f);
+                
+            listing.CheckboxLabeled("Allow symbiont destruction", ref FleshSymbiontSettings.allowSymbiontDestruction,
+                "Symbionts can be destroyed by damage");
+        }
+        
+        private void DrawBehaviorSettings(Listing_Standard listing)
+        {
+            listing.Label("Compulsion Behavior", -1, "How aggressively symbionts compel colonists");
+            
             FleshSymbiontSettings.compulsionFrequencyMultiplier = listing.SliderLabeled(
                 $"Compulsion frequency: {FleshSymbiontSettings.compulsionFrequencyMultiplier:F1}x", 
                 FleshSymbiontSettings.compulsionFrequencyMultiplier, 0.1f, 3.0f);
@@ -186,22 +241,25 @@ namespace FleshSymbiontMod
                 $"Compulsion range: {FleshSymbiontSettings.maxCompulsionRange} tiles", 
                 FleshSymbiontSettings.maxCompulsionRange, 5, 50);
                 
+            listing.Gap(12f);
+            
+            listing.Label("Resistance & Bonding");
             listing.CheckboxLabeled("Allow compulsion resistance", ref FleshSymbiontSettings.allowCompulsionResistance,
                 "Colonists can sometimes resist compulsion based on their traits");
                 
             if (FleshSymbiontSettings.allowCompulsionResistance)
             {
                 FleshSymbiontSettings.compulsionResistanceChance = listing.SliderLabeled(
-                    $"Resistance chance: {FleshSymbiontSettings.compulsionResistanceChance:P0}", 
+                    $"Base resistance chance: {FleshSymbiontSettings.compulsionResistanceChance:P0}", 
                     FleshSymbiontSettings.compulsionResistanceChance, 0.0f, 0.5f);
             }
-            listing.Gap(12f);
             
-            // Bonding Effects Section
-            listing.Label("Bonding Effects", -1, "Benefits and penalties of symbiont bonding");
             listing.CheckboxLabeled("Allow voluntary bonding", ref FleshSymbiontSettings.allowVoluntaryBonding,
                 "Colonists can choose to touch the symbiont voluntarily");
                 
+            listing.Gap(12f);
+            
+            listing.Label("Bonding Effects");
             FleshSymbiontSettings.bondingBenefitsMultiplier = listing.SliderLabeled(
                 $"Bonding benefits: {FleshSymbiontSettings.bondingBenefitsMultiplier:F1}x", 
                 FleshSymbiontSettings.bondingBenefitsMultiplier, 0.1f, 3.0f);
@@ -219,17 +277,10 @@ namespace FleshSymbiontMod
                     $"Madness frequency: {FleshSymbiontSettings.madnessFrequencyMultiplier:F1}x", 
                     FleshSymbiontSettings.madnessFrequencyMultiplier, 0.1f, 3.0f);
             }
+            
             listing.Gap(12f);
             
-            // Symbiont Durability Section
-            listing.Label("Symbiont Durability", -1, "How tough symbionts are and how they react to threats");
-            FleshSymbiontSettings.symbiontHealthMultiplier = listing.SliderLabeled(
-                $"Symbiont health: {FleshSymbiontSettings.symbiontHealthMultiplier:F1}x", 
-                FleshSymbiontSettings.symbiontHealthMultiplier, 0.1f, 5.0f);
-                
-            listing.CheckboxLabeled("Allow symbiont destruction", ref FleshSymbiontSettings.allowSymbiontDestruction,
-                "Symbionts can be destroyed by damage");
-                
+            listing.Label("Defense Behavior");
             listing.CheckboxLabeled("Bonded colonists defend symbiont", ref FleshSymbiontSettings.bondedDefendsSymbiont,
                 "Bonded colonists go berserk when their symbiont is threatened");
                 
@@ -239,9 +290,46 @@ namespace FleshSymbiontMod
                     $"Defense aggression: {FleshSymbiontSettings.defenseAggressionLevel:F1}x", 
                     FleshSymbiontSettings.defenseAggressionLevel, 0.1f, 3.0f);
             }
+        }
+        
+        private void DrawHorrorSettings(Listing_Standard listing)
+        {
+            listing.Label("Atmospheric Horror", -1, "Control the intensity and frequency of horror elements");
+            
+            listing.CheckboxLabeled("Enable horror messages", ref FleshSymbiontSettings.enableHorrorMessages,
+                "Show atmospheric horror messages during events");
+                
+            listing.CheckboxLabeled("Enable atmospheric effects", ref FleshSymbiontSettings.enableAtmosphericEffects,
+                "Enable visual and audio atmospheric effects");
+                
+            listing.CheckboxLabeled("Enable body horror descriptions", ref FleshSymbiontSettings.enableBodyHorrorDescriptions,
+                "Include detailed body horror in descriptions (affects bonding messages)");
+                
             listing.Gap(12f);
             
-            // Ideology Integration Section (only if Ideology is loaded)
+            listing.Label("Message Intensity");
+            var messageLabels = new[] { "None", "Minimal", "Normal", "Frequent" };
+            FleshSymbiontSettings.messageFrequency = (int)listing.SliderLabeled(
+                $"Message frequency: {messageLabels[FleshSymbiontSettings.messageFrequency]}", 
+                FleshSymbiontSettings.messageFrequency, 0, 3);
+                
+            if (FleshSymbiontSettings.messageFrequency > 0)
+            {
+                listing.Label("Message Preview:", -1);
+                string preview = FleshSymbiontSettings.messageFrequency switch
+                {
+                    1 => "\"John has bonded with the symbiont.\"",
+                    2 => "\"John screams as the flesh symbiont's tendrils burrow into their spine...\"",
+                    3 => "\"John convulses as the symbiont's tendrils burrow deep into their spinal cord. Bone cracks, flesh tears...\"",
+                    _ => ""
+                };
+                listing.Label(preview, -1);
+            }
+        }
+        
+        private void DrawDLCSettings(Listing_Standard listing)
+        {
+            // Ideology Integration
             if (ModsConfig.IdeologyActive)
             {
                 listing.Label("Ideology Integration", -1, "Features requiring Ideology DLC");
@@ -266,7 +354,7 @@ namespace FleshSymbiontMod
                 listing.Gap(12f);
             }
             
-            // Biotech Integration Section (only if Biotech is loaded)
+            // Biotech Integration
             if (ModsConfig.BiotechActive)
             {
                 listing.Label("Biotech Integration", -1, "Features requiring Biotech DLC");
@@ -301,7 +389,7 @@ namespace FleshSymbiontMod
                 listing.Gap(12f);
             }
             
-            // Royalty Integration Section (only if Royalty is loaded)
+            // Royalty Integration
             if (ModsConfig.RoyaltyActive)
             {
                 listing.Label("Royalty Integration", -1, "Features requiring Royalty DLC");
@@ -329,30 +417,15 @@ namespace FleshSymbiontMod
                     listing.CheckboxLabeled("Enable royal decrees", ref FleshSymbiontSettings.enableRoyalDecrees,
                         "Empire can issue decrees to purge symbionts");
                 }
-                listing.Gap(12f);
             }
+        }
+        
+        private void DrawBalanceSettings(Listing_Standard listing)
+        {
+            listing.Label("Gameplay Balance", -1, "Fine-tune the gameplay balance and difficulty");
             
-            // Horror/Atmosphere Section
-            listing.Label("Horror & Atmosphere", -1, "Control the intensity of horror elements");
-            listing.CheckboxLabeled("Enable horror messages", ref FleshSymbiontSettings.enableHorrorMessages,
-                "Show atmospheric horror messages during events");
-                
-            listing.CheckboxLabeled("Enable atmospheric effects", ref FleshSymbiontSettings.enableAtmosphericEffects,
-                "Enable visual and audio atmospheric effects");
-                
-            listing.CheckboxLabeled("Enable body horror descriptions", ref FleshSymbiontSettings.enableBodyHorrorDescriptions,
-                "Include detailed body horror in descriptions");
-                
-            var messageLabels = new[] { "None", "Minimal", "Normal", "Frequent" };
-            FleshSymbiontSettings.messageFrequency = (int)listing.SliderLabeled(
-                $"Message frequency: {messageLabels[FleshSymbiontSettings.messageFrequency]}", 
-                FleshSymbiontSettings.messageFrequency, 0, 3);
-            listing.Gap(12f);
-            
-            // Balancing Options Section
-            listing.Label("Balancing Options", -1, "Fine-tune the gameplay balance");
             listing.CheckboxLabeled("Require research to interact", ref FleshSymbiontSettings.enableResearchRequirement,
-                "Require xenobiology research before colonists can safely interact");
+                "Require xenobiology research before symbiont events can occur");
                 
             listing.CheckboxLabeled("Limit symbionts per map", ref FleshSymbiontSettings.limitSymbiontsPerMap,
                 "Prevent too many symbionts from spawning on one map");
@@ -364,6 +437,9 @@ namespace FleshSymbiontMod
                     FleshSymbiontSettings.maxSymbiontsPerMap, 1, 10);
             }
             
+            listing.Gap(12f);
+            
+            listing.Label("Symbiont Maintenance");
             listing.CheckboxLabeled("Enable symbiont decay", ref FleshSymbiontSettings.enableSymbiontDecay,
                 "Symbionts slowly lose health over time without feeding");
                 
@@ -373,9 +449,12 @@ namespace FleshSymbiontMod
                     $"Decay rate: {FleshSymbiontSettings.symbiontDecayRate:F2} HP/day", 
                     FleshSymbiontSettings.symbiontDecayRate, 0.01f, 1.0f);
             }
-            listing.Gap(12f);
             
-            // Reset buttons
+            listing.Gap(24f);
+            
+            // Preset buttons
+            listing.Label("Quick Presets", -1, "Apply pre-configured setting combinations");
+            
             if (listing.ButtonText("Reset to Default Settings"))
             {
                 ResetToDefaults();
@@ -391,8 +470,23 @@ namespace FleshSymbiontMod
                 SetCasualSettings();
             }
             
-            listing.End();
-            Widgets.EndScrollView();
+            if (listing.ButtonText("Cinematic Horror Settings"))
+            {
+                SetCinematicSettings();
+            }
+        }
+        
+        private float GetContentHeight()
+        {
+            return selectedTab switch
+            {
+                "general" => 400f,
+                "behavior" => 600f,
+                "horror" => 300f,
+                "dlc" => 700f,
+                "balance" => 500f,
+                _ => 400f
+            };
         }
         
         private void ResetToDefaults()
@@ -414,22 +508,6 @@ namespace FleshSymbiontMod
             FleshSymbiontSettings.allowSymbiontDestruction = true;
             FleshSymbiontSettings.bondedDefendsSymbiont = true;
             FleshSymbiontSettings.defenseAggressionLevel = 1.0f;
-            FleshSymbiontSettings.enableIdeologyFeatures = true;
-            FleshSymbiontSettings.enableRituals = true;
-            FleshSymbiontSettings.ritualBenefitsMultiplier = 1.0f;
-            FleshSymbiontSettings.enableMemePrecepts = true;
-            FleshSymbiontSettings.enableBiotechFeatures = true;
-            FleshSymbiontSettings.allowXenogermExtraction = true;
-            FleshSymbiontSettings.allowSymbiontHybridBirth = true;
-            FleshSymbiontSettings.xenogermExtractionDamage = 0.3f;
-            FleshSymbiontSettings.requireResearchForExtraction = true;
-            FleshSymbiontSettings.hybridTransformationChance = 0.1f;
-            FleshSymbiontSettings.enableRoyaltyFeatures = true;
-            FleshSymbiontSettings.enableSymbiontPsycasts = true;
-            FleshSymbiontSettings.royalsHateSymbionts = true;
-            FleshSymbiontSettings.allowSymbiontMeditation = true;
-            FleshSymbiontSettings.enableRoyalDecrees = true;
-            FleshSymbiontSettings.psycastPowerMultiplier = 1.0f;
             FleshSymbiontSettings.enableHorrorMessages = true;
             FleshSymbiontSettings.enableAtmosphericEffects = true;
             FleshSymbiontSettings.enableBodyHorrorDescriptions = true;
@@ -439,6 +517,11 @@ namespace FleshSymbiontMod
             FleshSymbiontSettings.maxSymbiontsPerMap = 2;
             FleshSymbiontSettings.enableSymbiontDecay = false;
             FleshSymbiontSettings.symbiontDecayRate = 0.1f;
+            
+            // DLC features remain at defaults
+            FleshSymbiontSettings.enableIdeologyFeatures = true;
+            FleshSymbiontSettings.enableBiotechFeatures = true;
+            FleshSymbiontSettings.enableRoyaltyFeatures = true;
         }
         
         private void SetHardcoreSettings()
@@ -483,9 +566,23 @@ namespace FleshSymbiontMod
             FleshSymbiontSettings.messageFrequency = 1;
         }
         
+        private void SetCinematicSettings()
+        {
+            // Balanced gameplay with maximum atmospheric horror
+            FleshSymbiontSettings.eventFrequencyMultiplier = 1.2f;
+            FleshSymbiontSettings.compulsionFrequencyMultiplier = 1.0f;
+            FleshSymbiontSettings.bondingBenefitsMultiplier = 1.0f;
+            FleshSymbiontSettings.bondingPenaltiesMultiplier = 1.0f;
+            FleshSymbiontSettings.enableHorrorMessages = true;
+            FleshSymbiontSettings.enableAtmosphericEffects = true;
+            FleshSymbiontSettings.enableBodyHorrorDescriptions = true;
+            FleshSymbiontSettings.messageFrequency = 3;
+            FleshSymbiontSettings.limitSymbiontsPerMap = true;
+            FleshSymbiontSettings.maxSymbiontsPerMap = 2;
+        }
+        
         public override string SettingsCategory()
         {
             return "Signal Lost";
         }
     }
-}
