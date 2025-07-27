@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Building: Flesh Symbiont -->
+  <ThingDef ParentName="BuildingBase">
+    <defName>FleshSymbiont</defName>
+    <label>flesh symbiont</label>
+    <description>A grotesque biomechanical entity of unknown origin. Its ribbed, hand-like appendage pulses with alien life, while complex neural networks beneath its translucent flesh suggest a form of directed intelligence.
+
+	The symbiont emanates a psychic presence that compels nearby humans to approach and bond with it. Once bonded, the host gains enhanced abilities but at the cost of their humanity.
+
+	WARNING: Prolonged exposure may result in psychological contamination.</description>
+    <thingClass>FleshSymbiontMod.Building_FleshSymbiont</thingClass>
+    <category>Building</category>
+    <graphicData>
+      <texPath>Things/Building/FleshSymbiont</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(2,2)</drawSize>
+      <damageData>
+        <rect>(0.2,0.2,1.6,1.6)</rect>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>40</pathCost>
+    <blockWind>false</blockWind>
+    <fillPercent>0.5</fillPercent>
+    <canOverlapZones>false</canOverlapZones>
+    <statBases>
+      <MaxHitPoints>300</MaxHitPoints>
+      <Flammability>0.3</Flammability>
+      <Beauty>-15</Beauty>
+    </statBases>
+    <tickerType>Normal</tickerType>
+    <size>(2,2)</size>
+    <selectable>true</selectable>
+    <neverMultiSelect>false</neverMultiSelect>
+    <soundImpactDefault>BulletImpact_Flesh</soundImpactDefault>
+    <drawerType>MapMeshAndRealTime</drawerType>
+    <repairEffect>Repair</repairEffect>
+    <leaveResourcesWhenKilled>false</leaveResourcesWhenKilled>
+    <filthLeaving>Filth_Blood</filthLeaving>
+    <comps>
+      <li Class="CompProperties_Glower">
+        <glowRadius>6</glowRadius>
+        <glowColor>(180, 50, 50, 0)</glowColor>
+      </li>
+      <li Class="CompProperties_HeatPusher">
+        <compClass>CompHeatPusherPowered</compClass>
+        <heatPerSecond>3</heatPerSecond>
+        <heatPushMaxTemperature>25</heatPushMaxTemperature>
+      </li>
+    </comps>
+    <inspectorTabs>
+      <li>ITab_Art</li>
+    </inspectorTabs>
+    <designationHotKey>Misc12</designationHotKey>
+  </ThingDef>
+
+  <!-- Hediff: Symbiont Bond -->
+  <HediffDef>
+    <defName>SymbiontBond</defName>
+    <hediffClass>FleshSymbiontMod.Hediff_SymbiontBond</hediffClass>
+    <label>symbiont bond</label>
+    <description>This person has been bonded to a flesh symbiont. Alien tendrils have merged with their nervous system, granting enhanced abilities but corrupting their humanity.
+
+The symbiont provides increased physical capabilities and healing, but also increases hunger and may cause periodic episodes of madness.</description>
+    <labelNoun>symbiont corruption</labelNoun>
+    <initialSeverity>1.0</initialSeverity>
+    <maxSeverity>1.0</maxSeverity>
+    <isBad>false</isBad>
+    <chronic>true</chronic>
+    <scenarioCanAdd>false</scenarioCanAdd>
+    <stages>
+      <li>
+        <capMods>
+          <li>
+            <capacity>Moving</capacity>
+            <offset>0.15</offset>
+          </li>
+          <li>
+            <capacity>Manipulation</capacity>
+            <offset>0.10</offset>
+          </li>
+          <li>
+            <capacity>Sight</capacity>
+            <offset>0.10</offset>
+          </li>
+        </capMods>
+        <statOffsets>
+          <MeleeHitChance>8</MeleeHitChance>
+          <MeleeDodgeChance>6</MeleeDodgeChance>
+          <ShootingAccuracyPawn>0.12</ShootingAccuracyPawn>
+          <WorkSpeedGlobal>0.15</WorkSpeedGlobal>
+          <HungerRateMultiplier>0.3</HungerRateMultiplier>
+        </statOffsets>
+      </li>
+    </stages>
+  </HediffDef>
+
+  <!-- Hediff: Symbiont Regeneration -->
+  <HediffDef>
+    <defName>SymbiontRegeneration</defName>
+    <hediffClass>FleshSymbiontMod.Hediff_SymbiontRegeneration</hediffClass>
+    <label>symbiont regeneration</label>
+    <description>The symbiont's healing power flows through this person's body, rapidly repairing wounds and injuries.</description>
+    <labelNoun>alien healing</labelNoun>
+    <initialSeverity>0.5</initialSeverity>
+    <maxSeverity>2.0</maxSeverity>
+    <isBad>false</isBad>
+    <scenarioCanAdd>false</scenarioCanAdd>
+    <stages>
+      <li>
+        <minSeverity>0.1</minSeverity>
+        <label>minor</label>
+        <capMods>
+          <li>
+            <capacity>BloodFiltration</capacity>
+            <offset>0.10</offset>
+          </li>
+        </capMods>
+      </li>
+      <li>
+        <minSeverity>0.5</minSeverity>
+        <label>moderate</label>
+        <capMods>
+          <li>
+            <capacity>BloodFiltration</capacity>
+            <offset>0.20</offset>
+          </li>
+        </capMods>
+        <statOffsets>
+          <InjuryHealingFactor>0.5</InjuryHealingFactor>
+        </statOffsets>
+      </li>
+      <li>
+        <minSeverity>1.0</minSeverity>
+        <label>major</label>
+        <capMods>
+          <li>
+            <capacity>BloodFiltration</capacity>
+            <offset>0.30</offset>
+          </li>
+        </capMods>
+        <statOffsets>
+          <InjuryHealingFactor>1.0</InjuryHealingFactor>
+        </statOffsets>
+      </li>
+    </stages>
+  </HediffDef>
+
+  <!-- Hediff: Symbiont Fury -->
+  <HediffDef>
+    <defName>SymbiontFury</defName>
+    <hediffClass>FleshSymbiontMod.Hediff_SymbiontFury</hediffClass>
+    <label>symbiont fury</label>
+    <description>The symbiont's primal rage courses through this person's veins, enhancing their combat abilities while risking loss of control.</description>
+    <labelNoun>alien rage</labelNoun>
+    <initialSeverity>1.0</initialSeverity>
+    <maxSeverity>1.0</maxSeverity>
+    <isBad>false</isBad>
+    <scenarioCanAdd>false</scenarioCanAdd>
+    <stages>
+      <li>
+        <capMods>
+          <li>
+            <capacity>Moving</capacity>
+            <offset>0.25</offset>
+          </li>
+          <li>
+            <capacity>Manipulation</capacity>
+            <offset>0.20</offset>
+          </li>
+        </capMods>
+        <statOffsets>
+          <MeleeHitChance>15</MeleeHitChance>
+          <MeleeDodgeChance>10</MeleeDodgeChance>
+          <PainShockThreshold>0.5</PainShockThreshold>
+        </statOffsets>
+        <painOffset>-0.3</painOffset>
+      </li>
+    </stages>
+  </HediffDef>
+
+  <!-- Hediff: Psychic Amplifier -->
+  <HediffDef>
+    <defName>PsychicAmplifierSymbiont</defName>
+    <hediffClass>FleshSymbiontMod.Hediff_PsychicAmplifierSymbiont</hediffClass>
+    <label>symbiont psychic amplifier</label>
+    <description>The symbiont has enhanced this person's psychic capabilities, allowing for more powerful psycasts.</description>
+    <labelNoun>psychic enhancement</labelNoun>
+    <initialSeverity>1.0</initialSeverity>
+    <maxSeverity>2.0</maxSeverity>
+    <isBad>false</isBad>
+    <scenarioCanAdd>false</scenarioCanAdd>
+    <stages>
+      <li>
+        <statFactors>
+          <PsychicSensitivity>1.5</PsychicSensitivity>
+          <PsychicEntropyRecoveryRate>1.3</PsychicEntropyRecoveryRate>
+        </statFactors>
+      </li>
+    </stages>
+  </HediffDef>
+
+  <!-- Hediff: Symbiont Mutation -->
+  <HediffDef>
+    <defName>SymbiontMutation</defName>
+    <hediffClass>FleshSymbiontMod.Hediff_SymbiontMutation</hediffClass>
+    <label>symbiont mutation</label>
+    <description>Gradual genetic changes caused by prolonged symbiont exposure. The alien DNA is slowly rewriting this person's genetic code.</description>
+    <labelNoun>genetic corruption</labelNoun>
+    <initialSeverity>0.1</initialSeverity>
+    <maxSeverity>1.0</maxSeverity>
+    <isBad>true</isBad>
+    <chronic>true</chronic>
+    <scenarioCanAdd>false</scenarioCanAdd>
+    <stages>
+      <li>
+        <minSeverity>0.1</minSeverity>
+        <label>minor</label>
+      </li>
+      <li>
+        <minSeverity>0.4</minSeverity>
+        <label>moderate</label>
+        <statOffsets>
+          <MoveSpeed>0.1</MoveSpeed>
+          <HungerRateMultiplier>0.2</HungerRateMultiplier>
+        </statOffsets>
+      </li>
+      <li>
+        <minSeverity>0.7</minSeverity>
+        <label>major</label>
+        <statOffsets>
+          <MoveSpeed>0.2</MoveSpeed>
+          <WorkSpeedGlobal>0.1</WorkSpeedGlobal>
+          <HungerRateMultiplier>0.3</HungerRateMultiplier>
+        </statOffsets>
+      </li>
+    </stages>
+  </HediffDef>
+
+  <!-- Research Projects -->
+  <ResearchProjectDef>
+    <defName>FleshSymbiontStudy</defName>
+    <label>flesh symbiont study</label>
+    <description>Study the biomechanical flesh symbiont to understand its origins and potentially find ways to safely remove or control the parasitic bond.</description>
+    <baseCost>3000</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>Xenobiology</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>8.00</researchViewX>
+    <researchViewY>4.00</researchViewY>
+    <tab>Anomaly</tab>
+  </ResearchProjectDef>
+
+  <ResearchProjectDef>
+    <defName>SymbiontGenetics</defName>
+    <label>symbiont genetics</label>
+    <description>Study the genetic structure of flesh symbionts to understand how they alter human DNA. This research may lead to controlled genetic modification.</description>
+    <baseCost>4000</baseCost>
+    <techLevel>Spacer</techLevel>
+    <prerequisites>
+      <li>FleshSymbiontStudy</li>
+      <li>Xenogermination</li>
+    </prerequisites>
+    <requiredResearchBuilding>HiTechResearchBench</requiredResearchBuilding>
+    <researchViewX>10.00</researchViewX>
+    <researchViewY>4.00</researchViewY>
+    <tab>Anomaly</tab>
+  </ResearchProjectDef>
+
+  <!-- Xenogerm -->
+  <ThingDef ParentName="ResourceBase">
+    <defName>XenogermSymbiont</defName>
+    <label>symbiont xenogerm</label>
+    <description>Extracted genetic material from a flesh symbiont. Contains alien genes that can be implanted into humans, granting symbiont-like abilities.</description>
+    <graphicData>
+      <texPath>Things/Item/Special/XenogermSymbiont</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+    <stackLimit>10</stackLimit>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <Beauty>-4</Beauty>
+      <Mass>0.1</Mass>
+      <MarketValue>2000</MarketValue>
+      <DeteriorationRate>2.0</DeteriorationRate>
+      <Flammability>1.0</Flammability>
+    </statBases>
+    <thingCategories>
+      <li>BodyParts</li>
+    </thingCategories>
+    <tradeTags>
+      <li>ExoticMisc</li>
+    </tradeTags>
+    <comps>
+      <li Class="CompProperties_Forbiddable"/>
+      <li Class="CompProperties_UseEffect">
+        <compClass>CompUseEffect_InstallImplant</compClass>
+        <useJob>UseItem</useJob>
+        <useLabel>implant symbiont xenogerm</useLabel>
+        <jobString>Implanting symbiont xenogerm.</jobString>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <!-- Recipe for extracting xenogerm -->
+  <RecipeDef>
+    <defName>ExtractSymbiontXenogerm</defName>
+    <label>extract symbiont xenogerm</label>
+    <description>Extract genetic material from the flesh symbiont. This dangerous procedure may damage the symbiont and anger bonded colonists.</description>
+    <workerClass>FleshSymbiontMod.RecipeWorker_ExtractSymbiontXenogerm</workerClass>
+    <jobString>Extracting symbiont genetic material.</jobString>
+    <workAmount>5000</workAmount>
+    <workSpeedStat>MedicalOperationSpeed</workSpeedStat>
+    <workSkill>Medicine</workSkill>
+    <effectWorking>Surgery</effectWorking>
+    <soundWorking>Recipe_Surgery</soundWorking>
+    <ingredients>
+      <li>
+        <filter>
+          <categories>
+            <li>Medicine</li>
+          </categories>
+        </filter>
+        <count>3</count>
+      </li>
+    </ingredients>
+    <products>
+      <XenogermSymbiont>1</XenogermSymbiont>
+    </products>
+    <skillRequirements>
+      <Medicine>8</Medicine>
+      <Intellectual>6</Intellectual>
+    </skillRequirements>
+    <recipeUsers>
+      <li>FleshSymbiont</li>
+    </recipeUsers>
+  </RecipeDef>
+
+</Defs>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Symbiont Psycast Abilities -->
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontCompel</defName>
+    <label>symbiont compel</label>
+    <description>Channel the symbiont's psychic influence to compel a target to approach and bond with a nearby flesh symbiont. The target will be unable to resist the alien whispers.
+
+The compulsion strength is enhanced by the caster's bond with their symbiont.</description>
+    <iconPath>UI/Abilities/SymbiontCompel</iconPath>
+    <cooldownTicksRange>300000</cooldownTicksRange> <!-- 5 in-game hours -->
+    <aiCanUse>false</aiCanUse>
+    <displayGizmoWhileUndrafted>true</displayGizmoWhileUndrafted>
+    <disableGizmoWhileUndrafted>false</disableGizmoWhileUndrafted>
+    <groupDef>Symbiont</groupDef>
+    <level>1</level>
+    <order>10</order>
+    <psyfocusCost>0.25</psyfocusCost>
+    <entropyGain>20</entropyGain>
+    <statBases>
+      <Ability_Range>15</Ability_Range>
+    </statBases>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>15</range>
+      <targetParams>
+        <canTargetPawns>true</canTargetPawns>
+        <canTargetBuildings>false</canTargetBuildings>
+        <canTargetLocations>false</canTargetLocations>
+      </targetParams>
+    </verbProperties>
+    <comps>
+      <li Class="FleshSymbiontMod.CompProperties_AbilitySymbiontCompel">
+        <compClass>FleshSymbiontMod.CompAbilityEffect_SymbiontCompel</compClass>
+      </li>
+    </comps>
+  </AbilityDef>
+
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontHeal</defName>
+    <label>symbiont regeneration</label>
+    <description>Channel symbiont power to rapidly heal wounds and injuries. The alien flesh temporarily extends tendrils to repair damaged tissue.
+
+This ability draws directly from the symbiont's regenerative capabilities.</description>
+    <iconPath>UI/Abilities/SymbiontHeal</iconPath>
+    <cooldownTicksRange>180000</cooldownTicksRange> <!-- 3 in-game hours -->
+    <aiCanUse>true</aiCanUse>
+    <displayGizmoWhileUndrafted>true</displayGizmoWhileUndrafted>
+    <disableGizmoWhileUndrafted>false</disableGizmoWhileUndrafted>
+    <groupDef>Symbiont</groupDef>
+    <level>2</level>
+    <order>20</order>
+    <psyfocusCost>0.35</psyfocusCost>
+    <entropyGain>25</entropyGain>
+    <statBases>
+      <Ability_Range>8</Ability_Range>
+    </statBases>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>8</range>
+      <targetParams>
+        <canTargetPawns>true</canTargetPawns>
+        <canTargetBuildings>false</canTargetBuildings>
+        <canTargetLocations>false</canTargetLocations>
+      </targetParams>
+    </verbProperties>
+    <comps>
+      <li Class="CompProperties_AbilityGiveHediff">
+        <compClass>CompAbilityEffect_GiveHediff</compClass>
+        <hediffDef>SymbiontRegeneration</hediffDef>
+        <onlyApplyToSelf>false</onlyApplyToSelf>
+      </li>
+    </comps>
+  </AbilityDef>
+
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontRage</defName>
+    <label>symbiont fury</label>
+    <description>Unleash the symbiont's primal rage, enhancing combat abilities but risking loss of control. The user's eyes glow with alien light as they enter a berserk state.
+
+WARNING: This ability may trigger symbiont madness in weakened minds.</description>
+    <iconPath>UI/Abilities/SymbiontRage</iconPath>
+    <cooldownTicksRange>240000</cooldownTicksRange> <!-- 4 in-game hours -->
+    <aiCanUse>false</aiCanUse>
+    <displayGizmoWhileUndrafted>false</displayGizmoWhileUndrafted>
+    <disableGizmoWhileUndrafted>true</disableGizmoWhileUndrafted>
+    <groupDef>Symbiont</groupDef>
+    <level>3</level>
+    <order>30</order>
+    <psyfocusCost>0.50</psyfocusCost>
+    <entropyGain>35</entropyGain>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>0</range>
+      <targetParams>
+        <canTargetSelf>true</canTargetSelf>
+      </targetParams>
+    </verbProperties>
+    <comps>
+      <li Class="CompProperties_AbilityGiveHediff">
+        <compClass>CompAbilityEffect_GiveHediff</compClass>
+        <hediffDef>SymbiontFury</hediffDef>
+        <onlyApplyToSelf>true</onlyApplyToSelf>
+      </li>
+    </comps>
+  </AbilityDef>
+
+  <!-- Advanced Symbiont Abilities -->
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontTrackPrey</defName>
+    <label>predator's mark</label>
+    <description>Mark a target for hunting using the symbiont's enhanced senses. The marked prey can be tracked across any distance on the map, and bonded colonists gain combat bonuses against them.</description>
+    <iconPath>UI/Abilities/SymbiontTrack</iconPath>
+    <cooldownTicksRange>120000</cooldownTicksRange>
+    <aiCanUse>false</aiCanUse>
+    <groupDef>Symbiont</groupDef>
+    <level>2</level>
+    <order>25</order>
+    <psyfocusCost>0.20</psyfocusCost>
+    <entropyGain>15</entropyGain>
+    <statBases>
+      <Ability_Range>25</Ability_Range>
+    </statBases>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>25</range>
+      <targetParams>
+        <canTargetPawns>true</canTargetPawns>
+      </targetParams>
+    </verbProperties>
+  </AbilityDef>
+
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontDrainLife</defName>
+    <label>vampiric drain</label>
+    <description>Drain life force from a nearby corpse or wounded creature to accelerate healing. The symbiont feeds through its host, converting death into regeneration.</description>
+    <iconPath>UI/Abilities/SymbiontDrain</iconPath>
+    <cooldownTicksRange>180000</cooldownTicksRange>
+    <aiCanUse>true</aiCanUse>
+    <groupDef>Symbiont</groupDef>
+    <level>3</level>
+    <order>35</order>
+    <psyfocusCost>0.30</psyfocusCost>
+    <entropyGain>20</entropyGain>
+    <statBases>
+      <Ability_Range>3</Ability_Range>
+    </statBases>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>3</range>
+      <targetParams>
+        <canTargetPawns>true</canTargetPawns>
+        <canTargetBuildings>false</canTargetBuildings>
+      </targetParams>
+    </verbProperties>
+  </AbilityDef>
+
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontNetworkLink</defName>
+    <label>neural bridge</label>
+    <description>Temporarily link minds with another symbiont-bonded individual, sharing skills and coordinating actions perfectly. Both participants gain enhanced abilities while the link persists.</description>
+    <iconPath>UI/Abilities/SymbiontLink</iconPath>
+    <cooldownTicksRange>300000</cooldownTicksRange>
+    <aiCanUse>false</aiCanUse>
+    <groupDef>Symbiont</groupDef>
+    <level>4</level>
+    <order>40</order>
+    <psyfocusCost>0.40</psyfocusCost>
+    <entropyGain>30</entropyGain>
+    <statBases>
+      <Ability_Range>15</Ability_Range>
+    </statBases>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>15</range>
+      <targetParams>
+        <canTargetPawns>true</canTargetPawns>
+      </targetParams>
+    </verbProperties>
+  </AbilityDef>
+
+  <AbilityDef ParentName="PsycastBase">
+    <defName>SymbiontPsychicScream</defName>
+    <label>alien scream</label>
+    <description>Release a psychic scream channeling the symbiont's alien consciousness. Affects all non-bonded pawns in a wide area, potentially causing mental breaks or forcing them to flee.</description>
+    <iconPath>UI/Abilities/SymbiontScream</iconPath>
+    <cooldownTicksRange>600000</cooldownTicksRange> <!-- 10 in-game hours -->
+    <aiCanUse>false</aiCanUse>
+    <groupDef>Symbiont</groupDef>
+    <level>5</level>
+    <order>50</order>
+    <psyfocusCost>0.60</psyfocusCost>
+    <entropyGain>45</entropyGain>
+    <verbProperties>
+      <verbClass>Verb_CastAbility</verbClass>
+      <range>0</range>
+      <targetParams>
+        <canTargetSelf>true</canTargetSelf>
+      </targetParams>
+    </verbProperties>
+  </AbilityDef>
+
+  <!-- Psycast Group -->
+  <AbilityGroupDef>
+    <defName>Symbiont</defName>
+    <label>symbiont</label>
+    <description>Psychic abilities granted by symbiont bonding</description>
+    <iconPath>UI/Icons/AbilityGroups/Symbiont</iconPath>
+  </AbilityGroupDef>
+
+  <!-- Meditation Focus for Symbiont -->
+  <MeditationFocusDef>
+    <defName>SymbiontFocus</defName>
+    <label>symbiont focus</label>
+    <description>Focus on the alien whispers and pulsing rhythm of the flesh symbiont to achieve a trance-like state. The symbiont's consciousness guides the meditation.</description>
+    <focusTypes>
+      <li>Morbid</li>
+      <li>Minimal</li>
+    </focusTypes>
+    <requiredPsytrainerLevel>1</requiredPsytrainerLevel>
+    <incompatibleMeditationFoci>
+      <li>Flame</li>
+      <li>Natural</li>
+    </incompatibleMeditationFoci>
+    <canPawnUse>
+      <li Class="MeditationFocusRequirement_HasHediff">
+        <hediff>SymbiontBond</hediff>
+      </li>
+    </canPawnUse>
+    <postMeditationEffects>
+      <li Class="MeditationFocusEffect_GainPsyfocus">
+        <psyfocusGain>0.35</psyfocusGain>
+      </li>
+      <li Class="MeditationFocusEffect_RandomThought">
+        <thoughts>
+          <li>MeditatedOnSymbiont</li>
+        </thoughts>
+      </li>
+    </postMeditationEffects>
+    <defWorkerClass>FleshSymbiontMod.MeditationFocusDefWorker_Symbiont</defWorkerClass>
+  </MeditationFocusDef>
+
+  <!-- Room Requirements for Royalty -->
+  <RoomRequirementDef>
+    <defName>NoSymbiontPresence</defName>
+    <label>no symbiont presence</label>
+    <description>Royalty will not tolerate the presence of alien flesh symbionts in their throne rooms. The contamination is considered incompatible with noble bloodlines.</description>
+    <order>99</order>
+    <defWorkerClass>FleshSymbiontMod.RoomRequirement_NoSymbiontPresence</defWorkerClass>
+  </RoomRequirementDef>
+
+</Defs>

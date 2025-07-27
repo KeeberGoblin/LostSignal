@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "x2Z3Dfr5+H0=",
+  "success": true,
+  "projectFilePath": "C:\\STEAM\\steamapps\\common\\RimWorld\\Mods\\SignalLost\\Source\\FleshSymbiontMod\\FleshSymbiontMod.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\dherr\\.nuget\\packages\\krafs.rimworld.ref\\1.5.4104\\krafs.rimworld.ref.1.5.4104.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>../../Assemblies</OutputPath>
+    <AssemblyName>SignalLostMod</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <DebugType>none</DebugType>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.5.4104" />
+  </ItemGroup>
+  
+  <!-- Fallback for manual references if NuGet package unavailable -->
+  <ItemGroup Condition="'$(RimWorldInstallDir)' != ''">
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldInstallDir)/RimWorldWin64_Data/Managed/Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(RimWorldInstallDir)/RimWorldWin64_Data/Managed/UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(RimWorldInstallDir)/RimWorldWin64_Data/Managed/0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+</Project>

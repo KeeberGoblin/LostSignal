@@ -1,0 +1,3 @@
+C:\STEAM\steamapps\common\RimWorld\Mods\SignalLost\Source\FleshSymbiontMod\obj\Debug\Template-Style.csproj.AssemblyReference.cache
+C:\STEAM\steamapps\common\RimWorld\Mods\SignalLost\Source\FleshSymbiontMod\obj\Debug\Template-Style.GeneratedMSBuildEditorConfig.editorconfig
+C:\STEAM\steamapps\common\RimWorld\Mods\SignalLost\Source\FleshSymbiontMod\obj\Debug\Template-Style.csproj.CoreCompileInputs.cache
