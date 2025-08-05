@@ -130,7 +130,7 @@ namespace FleshSymbiontMod
                 string message = FleshSymbiontSettings.messageFrequency switch
                 {
                     3 => $"The extraction is successful, but at a terrible cost. The symbiont's agonized shriek echoes " +
-                         "through the colony as Dr. {doctor?.Name.ToStringShort ?? "Unknown"} pulls free a writhing mass of " +
+                         $"through the colony as Dr. {doctor?.Name.ToStringShort ?? "Unknown"} pulls free a writhing mass of " +
                          "alien genetic material. The xenogerm pulses with its own malevolent life, and the doctor's " +
                          "hands are stained with something that isn't quite blood...",
                          
