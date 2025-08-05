@@ -130,13 +130,13 @@ namespace FleshSymbiontMod
         private void UpdateHungerState()
         {
             float hungerInterval = HUNGER_INCREASE_INTERVAL / FleshSymbiontSettings.hungerGrowthMultiplier;
-            
-            if (ticksSinceLastBond > hungerInterval)
+
+            if (ticksSinceLastFeed > hungerInterval)
             {
                 int previousHunger = hungerLevel;
                 hungerLevel = Mathf.Min(3, hungerLevel + 1);
-                ticksSinceLastBond = 0;
-                
+                ticksSinceLastFeed = 0;
+
                 if (hungerLevel > previousHunger && hungerLevel >= 2)
                 {
                     ShowHungerMessage();

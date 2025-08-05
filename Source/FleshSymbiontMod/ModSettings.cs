@@ -579,11 +579,5 @@ namespace FleshSymbiontMod
             FleshSymbiontSettings.messageFrequency = 3;
             FleshSymbiontSettings.limitSymbiontsPerMap = true;
             FleshSymbiontSettings.maxSymbiontsPerMap = 2;
-        }
-        
-        public override string SettingsCategory()
-        {
-            return "Signal Lost";
-        }
     }
 }
