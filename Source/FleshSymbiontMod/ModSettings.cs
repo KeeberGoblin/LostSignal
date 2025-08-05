@@ -586,3 +586,4 @@ namespace FleshSymbiontMod
             return "Signal Lost";
         }
     }
+}
