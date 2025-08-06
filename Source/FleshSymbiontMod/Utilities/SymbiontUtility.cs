@@ -56,7 +56,7 @@ namespace FleshSymbiontMod
             
             if (FleshSymbiontSettings.enableHorrorMessages)
             {
-                string casterText = caster != null ? $" {caster.Name.ToStringShort()}'s" : "";
+                string casterText = caster != null ? $" {caster.Name.ToStringShort}'s" : "";
                 string message = Extensions.GetHorrorIntensityMessage(
                     $"{target.Name.ToStringShort} resists{casterText} psychic compulsion.",
                     $"{target.Name.ToStringShort} resists{casterText} psychic compulsion through sheer willpower!",
