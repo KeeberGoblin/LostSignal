@@ -5,11 +5,11 @@
   <ThingDef ParentName="BuildingBase">
     <defName>FleshSymbiont</defName>
     <label>flesh symbiont</label>
-    <description>A grotesque biomechanical entity of unknown origin. Its ribbed, hand-like appendage pulses with alien life, while complex neural networks beneath its translucent flesh suggest a form of directed intelligence.
+    <description>A grotesque biomechanical growth of uncertain origin. Some spacer scholars whisper that it's an archotech seed left to fester. Its ribbed, hand-like appendage pulses with alien life while neural lattices beneath translucent flesh hint at a patient intelligence.
 
-	The symbiont emanates a psychic presence that compels nearby humans to approach and bond with it. Once bonded, the host gains enhanced abilities but at the cost of their humanity.
+        The symbiont radiates a siren-like psychic field that draws in nearby colonists. Those who bond gain unnatural strength, but each tendril erodes their humanity.
 
-	WARNING: Prolonged exposure may result in psychological contamination.</description>
+        WARNING: Prolonged exposure has driven entire frontier settlements into madness.</description>
     <thingClass>FleshSymbiontMod.Building_FleshSymbiont</thingClass>
     <category>Building</category>
     <graphicData>

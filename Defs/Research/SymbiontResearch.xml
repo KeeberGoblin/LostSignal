@@ -5,9 +5,9 @@
   <ResearchProjectDef>
     <defName>FleshSymbiontStudy</defName>
     <label>flesh symbiont study</label>
-    <description>Study the biomechanical flesh symbiont to understand its origins and potentially find ways to safely remove or control the parasitic bond.
+    <description>Study the biomechanical flesh symbiont, suspected relics of abandoned archotech bio-labs, to understand its origins and find ways to safely remove or control the parasitic bond.
 
-This research may unlock methods to resist compulsion and develop countermeasures against the entity's influence.</description>
+This research may unlock methods to resist its siren call and develop countermeasures against the entity's influence.</description>
     <baseCost>3000</baseCost>
     <techLevel>Spacer</techLevel>
     <prerequisites>
