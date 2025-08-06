@@ -5,7 +5,7 @@
   <AbilityDef ParentName="PsycastBase">
     <defName>SymbiontCompel</defName>
     <label>symbiont compel</label>
-    <description>Channel the symbiont's psychic influence to compel a target to approach and bond with a nearby flesh symbiont. The target will be unable to resist the alien whispers.
+    <description>Channel the symbiont's psychic influence to compel a target to approach and bond with a nearby flesh symbiont. The lure echoes the psylink sirens of ancient cults, leaving the target unable to resist the alien whispers.
 
 The compulsion strength is enhanced by the caster's bond with their symbiont.</description>
     <iconPath>UI/Abilities/SymbiontCompel</iconPath>
@@ -205,7 +205,7 @@ WARNING: This ability may trigger symbiont madness in weakened minds.</descripti
   <AbilityGroupDef>
     <defName>Symbiont</defName>
     <label>symbiont</label>
-    <description>Psychic abilities granted by symbiont bonding</description>
+    <description>Psycasts taught by the symbiont hive-mind, merging human psylinks with alien instinct.</description>
     <iconPath>UI/Icons/AbilityGroups/Symbiont</iconPath>
   </AbilityGroupDef>
 
