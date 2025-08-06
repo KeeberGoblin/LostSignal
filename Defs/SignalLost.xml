@@ -278,7 +278,7 @@ The symbiont provides increased physical capabilities and healing, but also incr
     <label>symbiont xenogerm</label>
     <description>Extracted genetic material from a flesh symbiont. Contains alien genes that can be implanted into humans, granting symbiont-like abilities.</description>
     <graphicData>
-      <texPath>Things/Item/Special/XenogermSymbiont</texPath>
+      <texPath>Things/Item/Special/Xenogerm</texPath>
       <graphicClass>Graphic_Single</graphicClass>
     </graphicData>
     <stackLimit>10</stackLimit>
